@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from homeassistant.components.cover import CoverEntity, CoverEntityFeature
+from homeassistant.components.cover import CoverEntity, CoverEntityFeature, CoverDeviceClass
 from homeassistant.const import STATE_CLOSED, STATE_OPEN
 
 from .const import DOMAIN, CONF_ACCOUNT_ID, CONF_REFRESH_TOKEN
@@ -67,6 +67,11 @@ class MyQGarageCover(CoverEntity):
         if self._state is None:
             return None  # Don't mark as unavailable until we have actual data
         return self._state.get("online", False)
+
+    @property
+    def device_class(self):
+        """Return the device class."""
+        return CoverDeviceClass.GARAGE
 
     @property
     def extra_state_attributes(self):
