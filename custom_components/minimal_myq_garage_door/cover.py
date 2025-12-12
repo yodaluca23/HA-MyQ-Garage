@@ -29,6 +29,12 @@ class MyQGarageCover(CoverEntity):
         self._door = door
         self._entry = entry
         self._state = None
+        self._added_to_hass = False
+
+    async def async_added_to_hass(self):
+        """Run when entity is added to Home Assistant."""
+        await super().async_added_to_hass()
+        self._added_to_hass = True
 
     @property
     def unique_id(self):
@@ -59,7 +65,7 @@ class MyQGarageCover(CoverEntity):
     def available(self):
         """Return True if the device is online."""
         if self._state is None:
-            return False
+            return None  # Don't mark as unavailable until we have actual data
         return self._state.get("online", False)
 
     @property
@@ -114,3 +120,16 @@ class MyQGarageCover(CoverEntity):
                 return {}
 
         self._state = await self.hass.async_add_executor_job(_status)
+        
+        # Update the internal last_changed timestamp based on device's last_update
+        if self._state and self._state.get("last_update"):
+            try:
+                last_update_dt = datetime.fromisoformat(self._state.get("last_update").replace("Z", "+00:00"))
+                self._last_changed = last_update_dt
+            except (ValueError, AttributeError):
+                pass
+        
+        # Force Home Assistant to update the entity state and refresh last_changed
+        # Only call this after the entity is added to HA (has entity_id)
+        if self._added_to_hass:
+            self.async_write_ha_state()
