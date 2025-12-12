@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from homeassistant.components.cover import CoverEntity, CoverEntityFeature
 from homeassistant.const import STATE_CLOSED, STATE_OPEN
@@ -53,6 +54,33 @@ class MyQGarageCover(CoverEntity):
         if self._state is None:
             return None
         return self._state.get("door_state") != "open"
+
+    @property
+    def available(self):
+        """Return True if the device is online."""
+        if self._state is None:
+            return False
+        return self._state.get("online", False)
+
+    @property
+    def extra_state_attributes(self):
+        """Return extra state attributes for battery and last update info."""
+        attrs = {}
+        if self._state is None:
+            return attrs
+        
+        # Add battery status attributes
+        if self._state.get("dps_battery_critical"):
+            attrs["battery_critical"] = True
+        if self._state.get("dps_low_battery_mode"):
+            attrs["low_battery"] = True
+        
+        # Add last update timestamp
+        last_update = self._state.get("last_update")
+        if last_update:
+            attrs["last_update"] = last_update
+        
+        return attrs
 
     @property
     def should_poll(self):
