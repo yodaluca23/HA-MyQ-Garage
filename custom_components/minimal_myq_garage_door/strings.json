@@ -1,0 +1,28 @@
+{
+  "config": {
+    "title": "Mininal MyQ Garage Door",
+    "abort": {
+      "already_configured": "Device is already configured",
+      "reconfigure_successful": "Reconfiguration successful"
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "accountid": "Account ID",
+          "refresh_token": "Refresh Token"
+        }
+      },
+      "reconfigure": {
+        "data": {
+          "accountid": "Account ID",
+          "refresh_token": "Refresh Token"
+        }
+      }
+    }
+  }
+}

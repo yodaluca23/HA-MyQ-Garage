@@ -1,0 +1,17 @@
+{
+  "domain": "minimal_myq_garage_door",
+  "name": "Minimal MyQ Garage Door",
+  "codeowners": [
+    "@yodaluca23"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/yodaluca23/HA-MyQ-Garage",
+  "homekit": {},
+  "iot_class": "local_polling",
+  "requirements": ["mypyq"],
+  "single_config_entry": false,
+  "ssdp": [],
+  "version": "1.0.0",
+  "zeroconf": []
+}
