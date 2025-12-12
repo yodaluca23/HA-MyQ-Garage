@@ -2,9 +2,10 @@
   "domain": "minimal_myq_garage_door",
   "name": "Minimal MyQ Garage Door",
   "version": "0.1.0",
-  "documentation": "https://github.com/",
+  "documentation": "https://github.com/yodaluca23/HA-MyQ-Garage",
+  "issues": "https://github.com/yodaluca23/HA-MyQ-Garage/issues",
   "requirements": ["mypyq"],
   "config_flow": true,
   "iot_class": "cloud_polling",
-  "codeowners": []
+  "codeowners": ["@yodaluca23"]
 }

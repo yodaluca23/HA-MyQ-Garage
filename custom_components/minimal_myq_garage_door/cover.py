@@ -1,6 +1,6 @@
 import logging
 
-from homeassistant.components.cover import CoverEntity
+from homeassistant.components.cover import CoverEntity, CoverEntityFeature
 from homeassistant.const import STATE_CLOSED, STATE_OPEN
 
 from .const import DOMAIN, CONF_ACCOUNT_ID, CONF_REFRESH_TOKEN
@@ -57,6 +57,14 @@ class MyQGarageCover(CoverEntity):
     @property
     def should_poll(self):
         return True
+
+    @property
+    def supported_features(self):
+        """Return supported features bitmask.
+
+        Only support open and close to avoid showing Stop control in the UI.
+        """
+        return CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
 
     async def async_open_cover(self, **kwargs):
         def _open():
