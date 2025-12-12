@@ -17,10 +17,7 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
-from homeassistant.const import (
-    CONF_ACCOUNTID,
-    CONF_REFRESH_TOKEN
-)
+from .const import CONF_ACCOUNTID, CONF_REFRESH_TOKEN
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 
