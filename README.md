@@ -1,3 +1,6 @@
+> [!CAUTION]
+> NOT CURRENTLY FUNCTIONAL. This integration is under development and not yet working, please do not use it. Check back later for updates.
+
 # Miminal MyQ Garage Door
 This is a Home Assistant custom component that integrates MyQ garage door openers with minimal functionality. It provides basic control and monitoring of MyQ garage doors using the `mypyq` library.
 
