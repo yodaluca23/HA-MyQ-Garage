@@ -48,12 +48,19 @@ class MyQGarageCover(CoverEntity):
     def device_info(self):
         """Return device information for this door so HA creates a Device per door."""
         device_id = getattr(self._door, "device_id", None) or self.unique_id
-        return {
+        device_info = {
             "identifiers": {(DOMAIN, device_id)},
             "name": self.name,
             "manufacturer": getattr(self._door, "manufacturer", "MyQ"),
             "model": getattr(self._door, "device_type", "Garage Door"),
         }
+        
+        # Add serial number if available
+        serial_number = getattr(self._door, "serial_number", None)
+        if serial_number:
+            device_info["serial_number"] = serial_number
+        
+        return device_info
 
     @property
     def is_closed(self):
