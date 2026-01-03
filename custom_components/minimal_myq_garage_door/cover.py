@@ -5,29 +5,36 @@ from homeassistant.components.cover import CoverEntity, CoverEntityFeature, Cove
 from homeassistant.const import STATE_CLOSED, STATE_OPEN
 
 from .const import DOMAIN, CONF_ACCOUNT_ID, CONF_REFRESH_TOKEN
+from . import check_and_update_refresh_token
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    api = hass.data[DOMAIN][entry.entry_id]["api"]
+    data = hass.data[DOMAIN][entry.entry_id]
+    api = data["api"]
 
     def _get_devices():
         return api.devices()
 
     devices = await hass.async_add_executor_job(_get_devices)
 
+    # Check for token update after fetching devices
+    check_and_update_refresh_token(hass, entry, api)
+
     entities = []
     for device in devices:
-        entities.append(MyQGarageCover(device, entry))
+        entities.append(MyQGarageCover(hass, device, entry, api))
 
     async_add_entities(entities, True)
 
 
 class MyQGarageCover(CoverEntity):
-    def __init__(self, door, entry):
+    def __init__(self, hass, door, entry, api):
+        self._hass = hass
         self._door = door
         self._entry = entry
+        self._api = api
         self._state = None
         self._added_to_hass = False
 
@@ -117,12 +124,14 @@ class MyQGarageCover(CoverEntity):
             return self._door.open()
 
         await self.hass.async_add_executor_job(_open)
+        check_and_update_refresh_token(self.hass, self._entry, self._api)
 
     async def async_close_cover(self, **kwargs):
         def _close():
             return self._door.close()
 
         await self.hass.async_add_executor_job(_close)
+        check_and_update_refresh_token(self.hass, self._entry, self._api)
 
     async def async_update(self):
         def _status():
@@ -132,6 +141,9 @@ class MyQGarageCover(CoverEntity):
                 return {}
 
         self._state = await self.hass.async_add_executor_job(_status)
+
+        # Check for token update after status call
+        check_and_update_refresh_token(self.hass, self._entry, self._api)
         
         # Update the internal last_changed timestamp based on device's last_update
         if self._state and self._state.get("last_update"):
