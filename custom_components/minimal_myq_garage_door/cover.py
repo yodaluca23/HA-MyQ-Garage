@@ -1,4 +1,5 @@
 import logging
+import threading
 from datetime import datetime
 
 from homeassistant.components.cover import CoverEntity, CoverEntityFeature, CoverDeviceClass
@@ -37,11 +38,62 @@ class MyQGarageCover(CoverEntity):
         self._api = api
         self._state = None
         self._added_to_hass = False
+        self._subscribe_thread = None
 
     async def async_added_to_hass(self):
         """Run when entity is added to Home Assistant."""
         await super().async_added_to_hass()
         self._added_to_hass = True
+        
+        # Perform initial status fetch first
+        await self._async_fetch_status()
+        
+        # Subscribe to status updates from the door in a background thread
+        # This is non-blocking since subscribe() may run a long-lived listener
+        def _subscribe():
+            def status_callback(status):
+                """Handle status updates from the door subscription."""
+                self._state = status
+                # Schedule state update on the event loop
+                self.hass.loop.call_soon_threadsafe(
+                    self.async_schedule_update_ha_state
+                )
+                # Check for token update after status callback
+                self.hass.loop.call_soon_threadsafe(
+                    lambda: check_and_update_refresh_token(self.hass, self._entry, self._api)
+                )
+            
+            try:
+                self._door.subscribe(status_callback)
+            except Exception:
+                _LOGGER.exception("Error subscribing to door status updates")
+        
+        # Start subscription in a daemon thread so it doesn't block setup
+        self._subscribe_thread = threading.Thread(target=_subscribe, daemon=True)
+        self._subscribe_thread.start()
+
+    async def async_will_remove_from_hass(self):
+        """Run when entity is being removed from Home Assistant."""
+        # Unsubscribe from door updates if the library supports it
+        if hasattr(self._door, 'unsubscribe'):
+            def _unsubscribe():
+                try:
+                    self._door.unsubscribe()
+                except Exception:
+                    _LOGGER.debug("Error unsubscribing from door updates", exc_info=True)
+            
+            await self.hass.async_add_executor_job(_unsubscribe)
+
+    async def _async_fetch_status(self):
+        """Fetch the current status from the door."""
+        def _status():
+            try:
+                return self._door.status()
+            except Exception:
+                return {}
+
+        self._state = await self.hass.async_add_executor_job(_status)
+        check_and_update_refresh_token(self.hass, self._entry, self._api)
 
     @property
     def unique_id(self):
@@ -109,7 +161,8 @@ class MyQGarageCover(CoverEntity):
 
     @property
     def should_poll(self):
-        return True
+        """Return False as we use subscriptions for status updates."""
+        return False
 
     @property
     def supported_features(self):
@@ -134,16 +187,8 @@ class MyQGarageCover(CoverEntity):
         check_and_update_refresh_token(self.hass, self._entry, self._api)
 
     async def async_update(self):
-        def _status():
-            try:
-                return self._door.status()
-            except Exception:
-                return {}
-
-        self._state = await self.hass.async_add_executor_job(_status)
-
-        # Check for token update after status call
-        check_and_update_refresh_token(self.hass, self._entry, self._api)
+        """Fetch updates on demand (e.g., when user requests refresh)."""
+        await self._async_fetch_status()
         
         # Update the internal last_changed timestamp based on device's last_update
         if self._state and self._state.get("last_update"):
@@ -152,8 +197,3 @@ class MyQGarageCover(CoverEntity):
                 self._last_changed = last_update_dt
             except (ValueError, AttributeError):
                 pass
-        
-        # Force Home Assistant to update the entity state and refresh last_changed
-        # Only call this after the entity is added to HA (has entity_id)
-        if self._added_to_hass:
-            self.async_write_ha_state()
